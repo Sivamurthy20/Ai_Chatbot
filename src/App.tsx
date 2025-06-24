@@ -6,7 +6,7 @@ interface Message {
   text: string;
   isBot: boolean;
   timestamp: Date;
-  type?: 'text' | 'project' | 'tech' | 'resource' | 'phase';
+  type?: 'text' | 'project' | 'tech' | 'resource' | 'phase' | 'tasks';
   metadata?: any;
 }
 
@@ -235,6 +235,35 @@ const App: React.FC = () => {
         type: 'resource',
         metadata: resources
       };
+    } else if (
+      lowerText.includes('task') ||
+      lowerText.includes('todo') ||
+      lowerText.includes('what should i do') ||
+      lowerText.includes('action item') ||
+      lowerText.includes('next step')
+    ) {
+      const projectTasks = [
+        'Set up version control (e.g., GitHub repository)',
+        'Define project requirements and objectives',
+        'Research relevant technologies and tools',
+        'Design system architecture and data flow',
+        'Create initial wireframes or UI mockups',
+        'Break down work into milestones and tasks',
+        'Assign roles if working in a team',
+        'Start with a minimal viable product (MVP)',
+        'Test core features early',
+        'Document your progress and decisions',
+        'Gather feedback and iterate',
+        'Prepare for final presentation or deployment'
+      ];
+      botResponse = {
+        id: (Date.now() + 1).toString(),
+        text: `Here are some actionable project tasks to help you get started or move forward:`,
+        isBot: true,
+        timestamp: new Date(),
+        type: 'tasks',
+        metadata: projectTasks
+      };
     } else {
       // Default response with helpful suggestions
       botResponse = {
@@ -414,6 +443,29 @@ What specific area would you like to explore?`,
       );
     }
 
+    if (message.type === 'tasks' && message.metadata) {
+      const tasks: string[] = message.metadata;
+      return (
+        <div className="space-y-4">
+          <p className="text-gray-700">{message.text}</p>
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+            <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Project Tasks
+            </h3>
+            <ul className="space-y-2">
+              {tasks.map((task, idx) => (
+                <li key={idx} className="flex items-start text-sm text-gray-600">
+                  <ChevronRight className="w-4 h-4 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" />
+                  {task}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
     return <p className="text-gray-700 whitespace-pre-line">{message.text}</p>;
   };
 
@@ -510,23 +562,53 @@ What specific area would you like to explore?`,
         {/* Quick Actions */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
+            { 
+              icon: <Play className="w-5 h-5" />, 
+              text: 'Questions', 
+              questions: [
+                'What tasks should I do for my project?',
+                'Give me a project to-do list.',
+                'What are the next steps?'
+              ]
+            },
             { icon: <Lightbulb className="w-5 h-5" />, text: 'Project Ideas', query: 'Suggest a project idea' },
-            { icon: <Play className="w-5 h-5" />, text: 'Development Phases', query: 'What are the development phases?' },
             { icon: <Code className="w-5 h-5" />, text: 'Tech Stack', query: 'What technologies should I use?' },
             { icon: <BookOpen className="w-5 h-5" />, text: 'Learning Resources', query: 'Provide learning resources' }
           ].map((action, index) => (
-            <button
-              key={index}
-              onClick={() => processUserMessage(action.query)}
-              className="p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/80 transition-all duration-200 shadow-lg hover:shadow-xl group"
-            >
-              <div className="flex flex-col items-center space-y-2">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white group-hover:scale-110 transition-transform duration-200">
-                  {action.icon}
+            action.text === 'Questions' ? (
+              <div key={index} className="p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg group">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white group-hover:scale-110 transition-transform duration-200">
+                    {action.icon}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{action.text}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{action.text}</span>
+                <div className="mt-3 space-y-2">
+                  {action.questions?.map((q, i) => (
+                    <button
+                      key={i}
+                      className="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition"
+                      onClick={() => processUserMessage(q)}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </button>
+            ) : (
+              <button
+                key={index}
+                onClick={() => action.query && processUserMessage(action.query)}
+                className="p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/80 transition-all duration-200 shadow-lg hover:shadow-xl group"
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white group-hover:scale-110 transition-transform duration-200">
+                    {action.icon}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{action.text}</span>
+                </div>
+              </button>
+            )
           ))}
         </div>
       </div>
